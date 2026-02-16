@@ -1,29 +1,22 @@
 import type { AxiosResponse } from 'axios';
-import type { AuthState } from '../types/auth';
+import type {
+	AuthState,
+	ILoginBody,
+	IRegisterBody,
+} from '../types/auth';
+import type {
+	ICreateProductBody,
+	ICreateReviewBody,
+	IProduct,
+	ProductListRequest,
+} from '../types/product';
+import type {
+	IMakeAdminBody,
+	IUpdateUserBody,
+	IUser,
+	IUsers,
+} from '../types/user';
 import apiClient from './apiClient';
-
-export type IUser = Omit<AuthState, 'token'>;
-export type IUsers = Array<IUser>;
-
-export interface IUpdateUserBody {
-	name: string;
-	email: string;
-}
-
-export interface IMakeAdminBody {
-	isAdmin: boolean;
-}
-
-export interface IRegisterBody {
-	name: string;
-	email: string;
-	password: string;
-}
-
-export interface ILoginBody {
-	email: string;
-	password: string;
-}
 
 // Utility for cleaning the response data
 const responseBody = <T>(response: AxiosResponse<T>) => response.data;
@@ -34,6 +27,8 @@ const request = {
 		apiClient.post<T>(url, body).then(responseBody),
 	put: <T, B>(url: string, body: B) =>
 		apiClient.put<T>(url, body).then(responseBody),
+	delete: <T>(url: string) =>
+		apiClient.delete<T>(url).then(responseBody),
 };
 
 export const getProfile = () =>
@@ -54,3 +49,28 @@ export const registerUser = (data: IRegisterBody) =>
 
 export const loginUser = (data: ILoginBody) =>
 	request.post<AuthState, ILoginBody>('/api/users/login', data);
+
+export const getProducts = (keyword = '', pageNumber = '') =>
+	request.get<ProductListRequest>(
+		`/api/products?keyword=${keyword}&pageNumber=${pageNumber}`,
+	);
+
+export const createProduct = (data: ICreateProductBody) =>
+	request.post<IProduct, ICreateProductBody>('/api/products', data);
+
+// TODO: Validate with backend if delete returns the deleted object (IProduct)
+// or a success message (e.g. { message: string })..
+export const deleteProduct = (id: string) =>
+	request.delete<IProduct>(`/api/products/${id}`);
+
+export const getProductById = (id: string) =>
+	request.get<IProduct>(`/api/products/${id}`);
+
+export const createProductReview = (
+	id: string,
+	data: ICreateReviewBody,
+) =>
+	request.post<IProduct, ICreateReviewBody>(
+		`/api/products/${id}/reviews`,
+		data,
+	);
