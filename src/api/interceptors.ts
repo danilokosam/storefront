@@ -9,9 +9,18 @@ const onRequest = (
 	config: InternalAxiosRequestConfig,
 ): InternalAxiosRequestConfig => {
 	// Add authorization header with access token if available
-	const token = localStorage.getItem('token');
-	if (token) {
-		config.headers.Authorization = `Bearer ${token}`;
+	const userStorage = localStorage.getItem('user');
+	if (userStorage) {
+		try {
+			const user = JSON.parse(userStorage);
+			const token = user?.token;
+
+			if (token) {
+				config.headers.Authorization = `Bearer ${token}`;
+			}
+		} catch (e) {
+			console.error('Error parsing the user from localStorage', e);
+		}
 	}
 	console.info(`[Request] [${JSON.stringify(config)}]`);
 	return config;
@@ -36,7 +45,7 @@ const onResponseError = (error: AxiosError): Promise<AxiosError> => {
 
 		case 401:
 			console.error('unauthorised');
-			localStorage.removeItem('token');
+			localStorage.removeItem('user');
 			window.location.href = '/login';
 			break;
 
