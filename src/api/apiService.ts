@@ -5,6 +5,11 @@ import type {
 	IRegisterBody,
 } from '../types/auth';
 import type {
+	IOrder,
+	IOrderCreateBody,
+	IPaymentResult,
+} from '../types/order';
+import type {
 	ICreateProductBody,
 	ICreateReviewBody,
 	IProduct,
@@ -74,3 +79,24 @@ export const createProductReview = (
 		`/api/products/${id}/reviews`,
 		data,
 	);
+
+export const createOrder = (data: IOrderCreateBody) =>
+	request.post<IOrder, IOrderCreateBody>('/api/orders', data);
+
+export const getOrderById = (id: string) =>
+	request.get<IOrder>(`/api/orders/${id}`);
+
+export const payOrder = (id: string, data: IPaymentResult) =>
+	request.put<IOrder, IPaymentResult>(`/api/orders/${id}/pay`, data);
+
+export const deliverOrder = (id: string) =>
+	request.put<IOrder, Record<string, never>>(
+		`/api/orders/${id}/deliver`,
+		{},
+	);
+
+export const getOrders = () =>
+	request.get<Array<IOrder>>('/api/orders');
+
+export const getMyOrders = () =>
+	request.get<Array<IOrder>>('/api/orders/myorders');
