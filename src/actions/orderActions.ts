@@ -1,4 +1,3 @@
-import { atom, map } from 'nanostores';
 import {
 	createOrder,
 	deliverOrder,
@@ -7,37 +6,28 @@ import {
 	getOrders,
 	payOrder,
 } from '../api/apiService';
+import {
+	errorDelivery,
+	errorGetOrder,
+	errorMyOrderList,
+	errorOrderList,
+	errorPay,
+	errorPlaceOrder,
+	loadingDelivery,
+	loadingGetOrder,
+	loadingMyOrderList,
+	loadingOrderList,
+	loadingPay,
+	loadingPlaceOrder,
+	myOrderListState,
+	orderGetState,
+	orderListState,
+} from '../stores/orderStore';
 import type {
-	IOrder,
 	IOrderCreateBody,
 	IPaymentResult,
 } from '../types/order';
 import { runAction } from '../utils/runAction';
-
-// --- Place Order (Checkout) ---
-export const loadingPlaceOrder = atom<boolean>(false);
-export const errorPlaceOrder = atom<string | undefined>(undefined);
-
-// --- Single Order Details (View & Payment) ---
-export const loadingGetOrder = atom<boolean>(false);
-export const errorGetOrder = atom<string | undefined>(undefined);
-export const orderGetState = map<IOrder>();
-
-// --- Payment & Delivery Actions ---
-export const loadingPay = atom<boolean>(false);
-export const errorPay = atom<string | undefined>(undefined);
-
-export const loadingDelivery = atom<boolean>(false);
-export const errorDelivery = atom<string | undefined>(undefined);
-
-// --- Lists ---
-export const loadingOrderList = atom<boolean>(false);
-export const errorOrderList = atom<string | undefined>(undefined);
-export const orderListState = atom<Array<IOrder>>([]);
-
-export const loadingMyOrderList = atom<boolean>(false);
-export const errorMyOrderList = atom<string | undefined>(undefined);
-export const myOrderListState = atom<Array<IOrder>>([]);
 
 /**
  * Creates a new order and redirects the user to the order page.
