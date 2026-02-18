@@ -1,27 +1,22 @@
-import { atom, map } from 'nanostores';
 import {
 	getProfile,
 	getUsers,
 	makeAdmin,
 	updateProfile,
 } from '../api/apiService';
-import type { IUser, IUsers } from '../types/user';
+import {
+	errorGetProfile,
+	errorUpdateProfile,
+	errorUpdateUser,
+	errorUsers,
+	getProfileState,
+	loadingGetProfile,
+	loadingUpdateProfile,
+	loadingUpdateUser,
+	loadingUsers,
+	usersState,
+} from '../stores/userStore';
 import { runAction } from '../utils/runAction';
-
-export const loadingGetProfile = atom<boolean>(false);
-export const errorGetProfile = atom<string | undefined>(undefined);
-export const getProfileState = map<IUser>();
-
-export const loadingUpdateProfile = atom<boolean>(false);
-export const errorUpdateProfile = atom<string | undefined>(undefined);
-export const updateProfileState = map<IUser>();
-
-export const loadingUsers = atom<boolean>(false);
-export const errorUsers = atom<string | undefined>(undefined);
-export const usersState = atom<IUsers>([]);
-
-export const loadingUpdateUser = atom<boolean>(false);
-export const errorUpdateUser = atom<string | undefined>(undefined);
 
 export const loadProfileAction = () =>
 	runAction(getProfile(), {
