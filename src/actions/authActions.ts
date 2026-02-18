@@ -1,23 +1,12 @@
-import { atom, map } from 'nanostores';
 import { loginUser, registerUser } from '../api/apiService';
-import type { AuthState } from '../types/auth';
+import {
+	authState,
+	errorLogin,
+	errorRegister,
+	loadingLogin,
+	loadingRegister,
+} from '../stores/authStore';
 import { runAction } from '../utils/runAction';
-
-export const authInitialState: AuthState = {
-	id: '',
-	name: '',
-	email: '',
-	isAdmin: false,
-	token: '',
-};
-
-export const loadingRegister = atom<boolean>(false);
-export const errorRegister = atom<string | undefined>(undefined);
-
-export const loadingLogin = atom<boolean>(false);
-export const errorLogin = atom<string | undefined>(undefined);
-
-export const authState = map<AuthState>(authInitialState);
 
 export const registerRequest = async (
 	name: string,
