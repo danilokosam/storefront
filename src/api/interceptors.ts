@@ -4,6 +4,11 @@ import type {
 	AxiosResponse,
 	InternalAxiosRequestConfig,
 } from 'axios';
+import { refreshToken } from '../utils/authRefresh';
+
+interface CustomRequestConfig extends InternalAxiosRequestConfig {
+	_retry?: boolean;
+}
 
 const onRequest = (
 	config: InternalAxiosRequestConfig,
@@ -36,15 +41,44 @@ const onResponse = (response: AxiosResponse): AxiosResponse => {
 	return response;
 };
 
-const onResponseError = (error: AxiosError): Promise<AxiosError> => {
+const onResponseError = async (
+	error: AxiosError,
+	axiosInstance: AxiosInstance,
+): Promise<AxiosResponse> => {
 	const { data, status } = error.response || {};
+
+	if (!error.config) {
+		return Promise.reject(error);
+	}
+	const originalRequest = error.config as CustomRequestConfig;
 	switch (status) {
 		case 400:
 			console.error(data);
 			break;
 
 		case 401:
-			console.error('unauthorised');
+			// --- REFRESH TOKEN LOGIC ---
+			if (!originalRequest._retry) {
+				originalRequest._retry = true;
+				console.info(
+					'Session expired. Attempting to refresh token...',
+				);
+
+				const newToken = await refreshToken();
+
+				if (newToken) {
+					console.info(
+						'Token refreshed successfully. Retrying request...',
+					);
+					// Retry the original request with the instance that has the interceptors
+					return axiosInstance(originalRequest);
+				}
+			}
+
+			// If we got here, it's because the refresh failed or this is already the second 401 attempt.
+			console.error(
+				'Failed to refresh session. Redirecting to login...',
+			);
 			localStorage.removeItem('user');
 			window.location.href = '/login';
 			break;
@@ -67,7 +101,7 @@ export function setupInterceptorsTo(
 	axiosInstance.interceptors.request.use(onRequest, onRequestError);
 	axiosInstance.interceptors.response.use(
 		onResponse,
-		onResponseError,
+		(error: AxiosError) => onResponseError(error, axiosInstance),
 	);
 	return axiosInstance;
 }
