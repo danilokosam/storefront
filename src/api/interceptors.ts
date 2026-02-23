@@ -10,6 +10,26 @@ interface CustomRequestConfig extends InternalAxiosRequestConfig {
 	_retry?: boolean;
 }
 
+type RetryQueueItem = {
+  resolve: (token: string | null) => void;
+  reject: (error: Error | AxiosError) => void;
+};
+
+// --- QUEUE LOGIC (Variables outside the function to persist between calls) ---
+let isRefreshing = false;
+let failedQueue: RetryQueueItem[] = [];
+
+const processQueue = (error: Error | AxiosError | null, token: string | null = null) => {
+	failedQueue.forEach((prom) => {
+		if (error) {
+			prom.reject(error);
+		} else {
+			prom.resolve(token);
+		}
+	});
+	failedQueue = [];
+};
+
 const onRequest = (
 	config: InternalAxiosRequestConfig,
 ): InternalAxiosRequestConfig => {
@@ -57,21 +77,48 @@ const onResponseError = async (
 			break;
 
 		case 401:
-			// --- REFRESH TOKEN LOGIC ---
+			// 1. If we are already refreshing the token, we queue this request.
+			if (isRefreshing) {
+				return new Promise((resolve, reject) => {
+					failedQueue.push({ resolve, reject });
+				})
+					.then((_token) => {
+						/**
+             * We don't manually set the header here because calling axiosInstance(originalRequest)
+             * triggers the request interceptor again, which will fetch the updated token 
+             * from localStorage.
+             */
+						return axiosInstance(originalRequest);
+					})
+					.catch((err) => {
+						return Promise.reject(err);
+					});
+			}
+
+			// 2. If it is the first request that fails (no refresh in progress)
 			if (!originalRequest._retry) {
 				originalRequest._retry = true;
+				isRefreshing = true; // We block the following requests
+
 				console.info(
 					'Session expired. Attempting to refresh token...',
 				);
 
-				const newToken = await refreshToken();
+				try {
+					const newToken = await refreshToken();
 
-				if (newToken) {
-					console.info(
-						'Token refreshed successfully. Retrying request...',
-					);
-					// Retry the original request with the instance that has the interceptors
-					return axiosInstance(originalRequest);
+					if (newToken) {
+						console.info(
+							'Token refreshed successfully. Releasing queue...',
+						);
+						processQueue(null, newToken); // We released those who were waiting.
+						return axiosInstance(originalRequest); // We are retrying the current request
+					}
+				} catch (refreshError) {
+					processQueue(refreshError as AxiosError, null); // If the refresh fails, we reject the entire queue
+					console.error('Refresh token failed.');
+				} finally {
+					isRefreshing = false; // Whatever happens, we release the lock for future errors
 				}
 			}
 
