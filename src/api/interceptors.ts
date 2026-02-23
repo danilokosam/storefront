@@ -11,15 +11,18 @@ interface CustomRequestConfig extends InternalAxiosRequestConfig {
 }
 
 type RetryQueueItem = {
-  resolve: (token: string | null) => void;
-  reject: (error: Error | AxiosError) => void;
+	resolve: (token: string | null) => void;
+	reject: (error: Error | AxiosError) => void;
 };
 
 // --- QUEUE LOGIC (Variables outside the function to persist between calls) ---
 let isRefreshing = false;
 let failedQueue: RetryQueueItem[] = [];
 
-const processQueue = (error: Error | AxiosError | null, token: string | null = null) => {
+const processQueue = (
+	error: Error | AxiosError | null,
+	token: string | null = null,
+) => {
 	failedQueue.forEach((prom) => {
 		if (error) {
 			prom.reject(error);
@@ -84,10 +87,10 @@ const onResponseError = async (
 				})
 					.then((_token) => {
 						/**
-             * We don't manually set the header here because calling axiosInstance(originalRequest)
-             * triggers the request interceptor again, which will fetch the updated token 
-             * from localStorage.
-             */
+						 * We don't manually set the header here because calling axiosInstance(originalRequest)
+						 * triggers the request interceptor again, which will fetch the updated token
+						 * from localStorage.
+						 */
 						return axiosInstance(originalRequest);
 					})
 					.catch((err) => {
